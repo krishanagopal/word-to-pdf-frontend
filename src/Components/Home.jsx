@@ -1,12 +1,47 @@
 
 import React from "react";
+import axios from "axios";
 
 function Home() {
   const [selectedfile, setselectedFile] = React.useState(null);
-
+  const [convert, setConvert] = React.useState("");
   const handlefileChange = (event) => {
     const file = event.target.files[0];
     setselectedFile(file);
+  };
+
+const[downloadError,setDownloadError]=React.useState("")
+
+
+  const handlesubmit =  async(event) => {
+    event.preventDefault();
+    if (!selectedfile) {
+      setConvert("Please select a file to upload.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append ("file", selectedfile);
+    try {
+       const response = await axios.post("http://localhost:3000/convertfile", formData, {
+        responseType: "blob",
+      })
+      const url=window.URL.createObjectURL(new Blob([response.data]))
+      const link=document.createElement("a")
+      link.href=url
+      link.setAttribute("download",selectedfile.name.replace(/\.[^/.]+$/, ".pdf"))
+
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+      setselectedFile(null)
+      setDownloadError("")
+      setConvert("File converted successfully!");
+    } catch (error) {
+      if(error.response && error.response.data && error.response.data.message){
+      setDownloadError("file error occured"error.rsponse.data.message);
+      }else{
+      setConvert("")
+    }
   };
 
   return (
@@ -69,6 +104,8 @@ function Home() {
 
             {/* Action Button */}
             <button disabled={!selectedfile}
+
+            onClick={handlesubmit}
               className="
                 w-full
                 bg-green-500 text-white
@@ -83,6 +120,8 @@ function Home() {
                 disabled:cursor-not-allowed
                 disabled:bg-green-300 
                 disabled:shadow-none
+
+               
 
                 hover:scale-[1.03]
 
@@ -105,6 +144,8 @@ function Home() {
             >
               Convert to PDF
             </button>
+            {convert &&(<div className="text-green-600 font-medium">{convert}</div>)}
+            {downloadError &&(<div className="text-red-600 font-medium">{downloadError}</div>)}
           </div>
         </div>
       </div>
